@@ -1,3 +1,11 @@
+rebel.xml
+.svn
+.git
+.idea
+target
+*.iml
+*.ipr
+
 *.class
 
 # Mobile Tools for Java (J2ME)

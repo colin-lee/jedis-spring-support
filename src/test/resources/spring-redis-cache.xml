@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns="http://www.springframework.org/schema/beans"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+
+    <bean id="testRedisCache" class="com.github.jedis.support.JedisFactoryBean" p:configName="redis-test"/>
+
+    <!-- declare Redis Cache Manager -->
+    <bean id="cacheManager"
+            class="com.github.spring.RedisCacheManager"
+            c:redis-ref="testRedisCache"
+            c:expiration="3600"/>
+
+    <!-- turn on declarative caching -->
+    <cache:annotation-driven cache-manager="cacheManager" />
+
+    <bean class="com.wenwen.jedis.support.CacheService"/>
+
+</beans>

@@ -1,0 +1,10 @@
+redis.servers=10.134.77.59:6379
+redis.password=Sn5wenwen
+redis.dbIndex=2
+startup=true
+pool.maxActive=100
+pool.minIdle=5
+pool.maxWaitMillis=3000
+pool.testOnBorrow=false
+pool.testOnReturn=false
+pool.testWhileIdle=true
