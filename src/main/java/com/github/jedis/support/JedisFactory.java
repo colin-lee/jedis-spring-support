@@ -21,107 +21,106 @@ import java.util.Set;
  * Created by lirui on 15/1/18.
  */
 public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBean<T> {
-	private Set<String> names = ImmutableSet.of("hashCode", "toString", "equals");
-	private Class<T> clazz;
+  private Set<String> names = ImmutableSet.of("hashCode", "toString", "equals");
+  private Class<T> clazz;
 
-	@SuppressWarnings("unchecked")
-	public JedisFactory() {
-		this.clazz = (Class<T>) ((ParameterizedType) getClass()
-				.getGenericSuperclass()).getActualTypeArguments()[0];
-	}
+  @SuppressWarnings("unchecked")
+  public JedisFactory() {
+    this.clazz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+  }
 
-	@Override
-	public T getObject() throws Exception {
-		return Reflection.newProxy(clazz, new InvocationHandler() {
-			@Override
-			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-				if (names.contains(method.getName())) {
-					JedisPool pool = getPool();
-					if (pool != null) {
-						return method.invoke(pool.getResource(), args);
-					} else {
-						return method.invoke(getShardedPool().getResource(), args);
-					}
-				}
+  @Override
+  public T getObject() throws Exception {
+    return Reflection.newProxy(clazz, new InvocationHandler() {
+      @Override
+      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        if (names.contains(method.getName())) {
+          JedisPool pool = getPool();
+          if (pool != null) {
+            return method.invoke(pool.getResource(), args);
+          } else {
+            return method.invoke(getShardedPool().getResource(), args);
+          }
+        }
 
-				String configName = getConfigName();
-				TraceContext context = TraceContext.get();
-				context.reset();
-				context.inc();
-				context.setIface("redis");
-				context.setMethod(method.getName());
-				context.setParameter(getParameters(args));
-				context.setServerName("redis:" + configName);
-				JedisPool pool = getPool();
-				if (pool != null) {
-					return exchangeRedis(pool, method, args, configName, context);
-				} else {
-					return exchangeRedis(getShardedPool(), method, args, configName, context);
-				}
-			}
-		});
-	}
+        String configName = getConfigName();
+        TraceContext context = TraceContext.get();
+        context.reset();
+        context.inc();
+        context.setIface("redis");
+        context.setMethod(method.getName());
+        context.setParameter(getParameters(args));
+        context.setServerName("redis:" + configName);
+        JedisPool pool = getPool();
+        if (pool != null) {
+          return exchangeRedis(pool, method, args, configName, context);
+        } else {
+          return exchangeRedis(getShardedPool(), method, args, configName, context);
+        }
+      }
+    });
+  }
 
-	private <T> Object exchangeRedis(Pool<T> pool, Method method, Object[] args, String configName, TraceContext context) throws ConnectException {
-		Object ret = null;
-		boolean fail = true;
-		long start = System.currentTimeMillis();
-		try {
-			T redis;
-			try {
-				redis = pool.getResource();
-			} catch (Exception e) {
-				log.error("cannot getResource from:{}", configName, e);
-				return null;
-			}
-			if (redis != null) {
-				try {
-					ret = method.invoke(redis, args);
-					pool.returnResource(redis);
-					fail = false;
-				} catch (Exception e) {
-					pool.returnBrokenResource(redis);
-					context.setReason(e.getMessage());
-					log.error("cannot exchange Redis: " + configName, e);
-					return null;
-				} finally {
-					Client client = null;
-					if (redis instanceof Jedis) {
-						client = ((Jedis)redis).getClient();
-					} else {
+  private <T> Object exchangeRedis(Pool<T> pool, Method method, Object[] args, String configName, TraceContext context) throws ConnectException {
+    Object ret = null;
+    boolean fail = true;
+    long start = System.currentTimeMillis();
+    try {
+      T redis;
+      try {
+        redis = pool.getResource();
+      } catch (Exception e) {
+        log.error("cannot getResource from:{}", configName, e);
+        return null;
+      }
+      if (redis != null) {
+        try {
+          ret = method.invoke(redis, args);
+          pool.returnResource(redis);
+          fail = false;
+        } catch (Exception e) {
+          pool.returnBrokenResource(redis);
+          context.setReason(e.getMessage());
+          log.error("cannot exchange Redis: " + configName, e);
+          return null;
+        } finally {
+          Client client = null;
+          if (redis instanceof Jedis) {
+            client = ((Jedis) redis).getClient();
+          } else {
             //TODO: 获取真实地址
             /*
-						Jedis real = (Jedis) Sharded.ACTIVE.get();
+            Jedis real = (Jedis) Sharded.ACTIVE.get();
 						if (real != null) {
 							client = real.getClient();
 						}
 						Sharded.ACTIVE.remove();
 						*/
-					}
-					if (client != null) {
-						String url = "redis://" + client.getHost() + ':' + client.getPort();
-						context.setUrl(url);
-					}
-				}
-			}
-		} finally {
-			long cost = System.currentTimeMillis() - start;
-			context.setStamp(start);
-			context.setFail(fail);
-			context.setCost(cost);
-			context.report();
-		}
-		return ret;
-	}
+          }
+          if (client != null) {
+            String url = "redis://" + client.getHost() + ':' + client.getPort();
+            context.setUrl(url);
+          }
+        }
+      }
+    } finally {
+      long cost = System.currentTimeMillis() - start;
+      context.setStamp(start);
+      context.setFail(fail);
+      context.setCost(cost);
+      context.report();
+    }
+    return ret;
+  }
 
-	@Override
-	public Class<?> getObjectType() {
-		return clazz;
-	}
+  @Override
+  public Class<?> getObjectType() {
+    return clazz;
+  }
 
-	@Override
-	public boolean isSingleton() {
-		return false;
-	}
+  @Override
+  public boolean isSingleton() {
+    return false;
+  }
 
 }

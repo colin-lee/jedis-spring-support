@@ -112,13 +112,13 @@ public class TraceContext {
     return iface;
   }
 
-  public TraceContext setIface(Class<?> iface) {
-    this.iface = iface.getSimpleName();
+  public TraceContext setIface(String iface) {
+    this.iface = iface;
     return this;
   }
 
-  public TraceContext setIface(String iface) {
-    this.iface = iface;
+  public TraceContext setIface(Class<?> iface) {
+    this.iface = iface.getSimpleName();
     return this;
   }
 
@@ -246,8 +246,8 @@ public class TraceContext {
     final StringBuilder sb = new StringBuilder(256);
     sb.append(stamp).append('\t');
     sb.append(cost).append('\t');
-    sb.append(spider ? 1: 0).append('\t');
-    sb.append(fail ? 1: 0).append('\t');
+    sb.append(spider ? 1 : 0).append('\t');
+    sb.append(fail ? 1 : 0).append('\t');
     if (Strings.isNullOrEmpty(uid)) {
       sb.append('\t');
     } else {
@@ -277,30 +277,16 @@ public class TraceContext {
 
   public TraceContext copy() {
     TraceContext n = new TraceContext();
-    n.setStamp(stamp)
-      .setCost(cost)
-      .setTraceId(traceId)
-      .setRpcId(rpcId)
-      .setSpider(spider)
-      .setColor(color)
-      .setFail(fail)
-      .setIface(iface)
-      .setMethod(method)
-      .setClientName(clientName)
-      .setClientIp(clientIp)
-      .setServerName(serverName)
-      .setUrl(url)
-      .setParameter(parameter)
-      .setReason(reason)
-      .setExtra(extra)
-      .setUid(uid);
+    n.setStamp(stamp).setCost(cost).setTraceId(traceId).setRpcId(rpcId).setSpider(spider).setColor(color).setFail(fail).setIface(iface).setMethod(method).setClientName(clientName).setClientIp(clientIp).setServerName(serverName).setUrl(url).setParameter(parameter).setReason(reason).setExtra(extra).setUid(uid);
     return n;
   }
 
   private String removeTabChar(String s) {
-    if (s == null) return "";
+    if (s == null)
+      return "";
     int pos = s.indexOf('\t');
-    if (pos == -1) return s;
+    if (pos == -1)
+      return s;
     int length = s.length();
     StringBuilder sb = new StringBuilder(length);
     if (pos > 0) {

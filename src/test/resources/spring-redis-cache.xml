@@ -2,8 +2,8 @@
 <beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:c="http://www.springframework.org/schema/c"
-       xmlns="http://www.springframework.org/schema/beans"
        xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
@@ -12,12 +12,12 @@
 
     <!-- declare Redis Cache Manager -->
     <bean id="cacheManager"
-            class="com.github.spring.RedisCacheManager"
-            c:redis-ref="testRedisCache"
-            c:expiration="3600"/>
+          class="com.github.spring.RedisCacheManager"
+          c:redis-ref="testRedisCache"
+          c:expiration="3600"/>
 
     <!-- turn on declarative caching -->
-    <cache:annotation-driven cache-manager="cacheManager" />
+    <cache:annotation-driven cache-manager="cacheManager"/>
 
     <bean class="com.wenwen.jedis.support.CacheService"/>
 
