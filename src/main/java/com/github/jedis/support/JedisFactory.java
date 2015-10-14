@@ -1,8 +1,6 @@
 package com.github.jedis.support;
 
 import com.github.trace.TraceContext;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.Reflection;
 import org.springframework.beans.factory.FactoryBean;
@@ -13,8 +11,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.ConnectException;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -71,27 +67,6 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
     });
   }
 
-  private Object findDefault(Method method) {
-    Class<?> clz = method.getReturnType();
-    if (clz == String.class) {
-      return "";
-    } else if (clz == Long.class || clz == Double.class) {
-      return 0L;
-    } else if (clz == Boolean.class) {
-      return Boolean.FALSE;
-    } else if (clz.isArray()) {
-      return new byte[0];
-    } else if (clz.isAssignableFrom(Set.class)) {
-      return ImmutableSet.of();
-    } else if (clz.isAssignableFrom(List.class)) {
-      return ImmutableList.of();
-    } else if (clz.isAssignableFrom(Map.class)) {
-      return ImmutableMap.of();
-    } else {
-      return null;
-    }
-  }
-
   private <T> Object exchangeRedis(Pool<T> pool, Method method, Object[] args, String configName, TraceContext context) throws ConnectException {
     Object ret = null;
     boolean fail = true;
@@ -118,7 +93,7 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
           Client client = null;
           if (redis instanceof Jedis) {
             client = ((Jedis) redis).getClient();
-          } else {
+          } else if (args.length > 0){
             Object key = args[0];
             if (key instanceof String) {
               client = ((ShardedJedis) redis).getShard((String) key).getClient();

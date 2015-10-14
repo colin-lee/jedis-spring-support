@@ -8,6 +8,8 @@ import com.github.trace.TraceRecorder;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import redis.clients.jedis.ShardedJedisPool;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
 
@@ -216,11 +219,11 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   /**
    * redis的密码当中最好不要包含'@'符号，否则处理起来非常麻烦
    *
-   * @param host
-   * @param port
-   * @param password
-   * @param dbIndex
-   * @return
+   * @param host     主机地址
+   * @param port     端口号
+   * @param password 密码
+   * @param dbIndex  db
+   * @return 资源地址
    */
   protected URI create(String host, int port, String password, int dbIndex) {
     StringBuilder sbd = new StringBuilder(32);
@@ -351,5 +354,26 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     }
     sbd.append(second);
     return sbd.toString();
+  }
+
+  protected Object findDefault(Method method) {
+    Class<?> clz = method.getReturnType();
+    if (clz == String.class) {
+      return "";
+    } else if (clz == Long.class || clz == Double.class) {
+      return 0L;
+    } else if (clz == Boolean.class) {
+      return Boolean.FALSE;
+    } else if (clz.isArray()) {
+      return new byte[0];
+    } else if (clz.isAssignableFrom(Set.class)) {
+      return ImmutableSet.of();
+    } else if (clz.isAssignableFrom(List.class)) {
+      return ImmutableList.of();
+    } else if (clz.isAssignableFrom(Map.class)) {
+      return ImmutableMap.of();
+    } else {
+      return null;
+    }
   }
 }
