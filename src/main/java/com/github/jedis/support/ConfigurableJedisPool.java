@@ -30,7 +30,6 @@ import java.util.*;
 
 /**
  * 根据配置得到一个pool
- * <p/>
  * Created by lirui on 2015/03/10 下午7:56.
  */
 public abstract class ConfigurableJedisPool implements InitializingBean, DisposableBean {

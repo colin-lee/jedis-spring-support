@@ -15,7 +15,6 @@ import java.util.Set;
 
 /**
  * 通过cms系统配置redis，并接入监控系统
- * <p/>
  * Created by lirui on 15/1/18.
  */
 public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBean<T> {

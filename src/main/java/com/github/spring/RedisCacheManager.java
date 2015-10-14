@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * 支持spring-3.1 的cache注解
- * <p/>
  * Created by lirui on 2015/03/10 下午8:23.
  */
 public class RedisCacheManager implements CacheManager {

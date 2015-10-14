@@ -11,10 +11,7 @@
     <bean id="testRedisCache" class="com.github.jedis.support.JedisFactoryBean" p:configName="redis-test"/>
 
     <!-- declare Redis Cache Manager -->
-    <bean id="cacheManager"
-          class="com.github.spring.RedisCacheManager"
-          c:redis-ref="testRedisCache"
-          c:expiration="3600"/>
+    <bean id="cacheManager" class="com.github.spring.RedisCacheManager" c:redis-ref="testRedisCache" c:expiration="3600"/>
 
     <!-- turn on declarative caching -->
     <cache:annotation-driven cache-manager="cacheManager"/>

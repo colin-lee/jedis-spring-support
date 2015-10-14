@@ -1,10 +1,15 @@
 package com.github.spring;
 
+import com.github.autoconf.helper.ConfigHelper;
 import com.github.jedis.support.BinaryJedisCmd;
 import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.core.serializer.support.DeserializingConverter;
+import org.springframework.core.serializer.support.SerializingConverter;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -12,10 +17,12 @@ import java.util.Set;
 
 /**
  * 用redis做cache存储
- * <p/>
  * Created by lirui on 2015/03/10 下午8:32.
  */
 public class RedisCache implements Cache {
+  private static final Logger LOG = LoggerFactory.getLogger(RedisCache.class);
+  private static final Charset UTF8 = Charset.forName("UTF-8");
+  private static final byte[] EMPTY_ARRAY = new byte[0];
   private static final int PAGE_SIZE = 128;
   private final String name;
   private final int expiration;
@@ -28,19 +35,18 @@ public class RedisCache implements Cache {
    * 把所有设定的key记录下来，方便做clearAll操作
    */
   private final byte[] setName;
-  private final JdkSerializationRedisSerializer serializer;
-  private Charset UTF8 = Charset.forName("UTF-8");
+
+  private Converter<Object, byte[]> serializer = new SerializingConverter();
+  private Converter<byte[], Object> deserializer = new DeserializingConverter();
 
   public RedisCache(String name, int expiration, BinaryJedisCmd redis) {
-    //TODO: profile
-    String profile = "unknown";
+    String profile = ConfigHelper.getApplicationConfig().get("process.profile", "");
     this.name = Strings.isNullOrEmpty(name) ? "default" : name;
     this.expiration = expiration;
     this.redis = redis;
     this.prefix = (profile + ':' + name).getBytes(UTF8);
     // name of the set holding the keys
     this.setName = (profile + ':' + name + "~keys").getBytes(UTF8);
-    serializer = new JdkSerializationRedisSerializer();
   }
 
   @Override
@@ -55,13 +61,8 @@ public class RedisCache implements Cache {
 
   @Override
   public ValueWrapper get(Object key) {
-    Object value;
-    try {
-      value = serializer.deserialize(redis.get(computeKey(key)));
-      return value == null ? null : new SimpleValueWrapper(value);
-    } catch (Exception ignored) {
-      return null;
-    }
+    Object value = deserialize(redis.get(computeKey(key)));
+    return value == null ? null : new SimpleValueWrapper(value);
   }
 
   @Override
@@ -74,7 +75,7 @@ public class RedisCache implements Cache {
   @Override
   public void put(Object key, Object value) {
     final byte[] keyBytes = computeKey(key);
-    final byte[] valueBytes = serializer.serialize(value);
+    final byte[] valueBytes = serialize(value);
     redis.set(keyBytes, valueBytes);
     redis.zadd(setName, 0, keyBytes);
     if (expiration > 0) {
@@ -86,7 +87,7 @@ public class RedisCache implements Cache {
   @Override
   public ValueWrapper putIfAbsent(Object key, Object value) {
     final byte[] keyBytes = computeKey(key);
-    final byte[] valueBytes = serializer.serialize(value);
+    final byte[] valueBytes = serialize(value);
     final Long nx = redis.setnx(keyBytes, valueBytes);
     if (nx == 1) {
       redis.zadd(setName, 0, keyBytes);
@@ -94,10 +95,7 @@ public class RedisCache implements Cache {
         redis.expire(keyBytes, expiration);
         redis.expire(setName, expiration);
       }
-      try {
-        value = serializer.deserialize(redis.get(keyBytes));
-      } catch (Exception ignored) {
-      }
+      value = deserialize(redis.get(keyBytes));
     }
     return new SimpleValueWrapper(value);
   }
@@ -140,5 +138,27 @@ public class RedisCache implements Cache {
     } else {
       return String.valueOf(value).getBytes(UTF8);
     }
+  }
+
+  private Object deserialize(byte[] bytes) {
+    if (bytes != null && bytes.length > 0) {
+      try {
+        return deserializer.convert(bytes);
+      } catch (Exception ex) {
+        LOG.error("cannot deserialize", ex);
+      }
+    }
+    return null;
+  }
+
+  private byte[] serialize(Object object) {
+    if (object != null) {
+      try {
+        return serializer.convert(object);
+      } catch (Exception ex) {
+        LOG.error("cannot serialize: {}", object, ex);
+      }
+    }
+    return EMPTY_ARRAY;
   }
 }
