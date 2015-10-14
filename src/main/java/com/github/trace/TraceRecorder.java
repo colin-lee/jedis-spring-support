@@ -1,9 +1,9 @@
 package com.github.trace;
 
 import com.github.autoconf.helper.ConfigHelper;
-import com.github.trace.listener.LogDisk;
 import com.github.trace.listener.OssStat;
 import com.github.trace.listener.OssTrace;
+import com.github.trace.listener.RpcLog;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import org.springframework.beans.factory.InitializingBean;
@@ -58,7 +58,7 @@ public class TraceRecorder implements InitializingBean {
     }
 
     //记录到日志
-    eventBus.register(new LogDisk());
+    eventBus.register(new RpcLog());
     //每分钟统计
     eventBus.register(new OssStat());
     //trace跟踪

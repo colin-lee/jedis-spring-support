@@ -108,13 +108,13 @@ public class TraceContext {
     return iface;
   }
 
-  public TraceContext setIface(String iface) {
-    this.iface = iface;
+  public TraceContext setIface(Class<?> iface) {
+    this.iface = iface.getSimpleName();
     return this;
   }
 
-  public TraceContext setIface(Class<?> iface) {
-    this.iface = iface.getSimpleName();
+  public TraceContext setIface(String iface) {
+    this.iface = iface;
     return this;
   }
 

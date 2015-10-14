@@ -4,7 +4,7 @@ import com.github.trace.TraceContext;
 import com.google.common.eventbus.Subscribe;
 
 /**
- * trace跟踪
+ * trace跟踪,实时上报到消息总线
  * Created by lirui on 2015-10-14 10:44.
  */
 public class OssTrace {
