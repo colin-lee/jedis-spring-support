@@ -1,6 +1,5 @@
-package com.wenwen.jedis.support;
+package com.github.jedis.support;
 
-import com.github.jedis.support.MergeJedisCmd;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;

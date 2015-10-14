@@ -36,11 +36,11 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
           if (pool != null) {
             return method.invoke(pool.getResource(), args);
           } else {
-            ShardedJedisPool shardedPool = getShardedPool();
-            if (shardedPool == null) {
+            ShardedJedisPool sPool = getShardedPool();
+            if (sPool == null) {
               return findDefault(method);
             }
-            return method.invoke(shardedPool.getResource(), args);
+            return method.invoke(sPool.getResource(), args);
           }
         }
 
@@ -56,11 +56,11 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
         if (pool != null) {
           return exchangeRedis(pool, method, args, configName, context);
         } else {
-          ShardedJedisPool shardedPool = getShardedPool();
-          if (shardedPool == null) {
+          ShardedJedisPool sPool = getShardedPool();
+          if (sPool == null) {
             return findDefault(method);
           }
-          return exchangeRedis(shardedPool, method, args, configName, context);
+          return exchangeRedis(sPool, method, args, configName, context);
         }
       }
     });

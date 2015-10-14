@@ -2,6 +2,7 @@ package com.github.spring;
 
 import com.github.autoconf.helper.ConfigHelper;
 import com.github.jedis.support.BinaryJedisCmd;
+import com.github.trace.TraceContext;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public class RedisCache implements Cache {
 
   @Override
   public ValueWrapper get(Object key) {
+    TraceContext.get().setParameter(key.toString());
     Object value = deserialize(redis.get(computeKey(key)));
     return value == null ? null : new SimpleValueWrapper(value);
   }

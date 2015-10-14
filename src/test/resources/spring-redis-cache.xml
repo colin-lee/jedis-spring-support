@@ -16,6 +16,6 @@
     <!-- turn on declarative caching -->
     <cache:annotation-driven cache-manager="cacheManager"/>
 
-    <bean class="com.wenwen.jedis.support.CacheService"/>
+    <bean class="com.github.jedis.support.CacheService"/>
 
 </beans>

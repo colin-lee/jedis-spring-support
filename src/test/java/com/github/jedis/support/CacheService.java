@@ -1,4 +1,4 @@
-package com.wenwen.jedis.support;
+package com.github.jedis.support;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
