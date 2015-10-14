@@ -234,6 +234,8 @@ public class TraceContext {
     this.reason = null;
     this.extra = null;
     this.fail = false;
+    this.serverName = null;
+    this.url = null;
     return this;
   }
 
