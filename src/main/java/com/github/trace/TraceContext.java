@@ -112,13 +112,13 @@ public class TraceContext {
     return iface;
   }
 
-  public TraceContext setIface(String iface) {
-    this.iface = iface;
+  public TraceContext setIface(Class<?> iface) {
+    this.iface = iface.getSimpleName();
     return this;
   }
 
-  public TraceContext setIface(Class<?> iface) {
-    this.iface = iface.getSimpleName();
+  public TraceContext setIface(String iface) {
+    this.iface = iface;
     return this;
   }
 
@@ -249,17 +249,17 @@ public class TraceContext {
     sb.append(spider ? 1 : 0).append('\t');
     sb.append(fail ? 1 : 0).append('\t');
     if (Strings.isNullOrEmpty(uid)) {
-      sb.append('\t');
+      sb.append('-').append('\t');
     } else {
       sb.append(uid).append('\t');
     }
     if (Strings.isNullOrEmpty(traceId)) {
-      sb.append('\t');
+      sb.append('-').append('\t');
     } else {
       sb.append(traceId).append('\t');
     }
     if (Strings.isNullOrEmpty(rpcId)) {
-      sb.append('\t');
+      sb.append('-').append('\t');
     } else {
       sb.append(rpcId).append('\t');
     }
@@ -277,7 +277,23 @@ public class TraceContext {
 
   public TraceContext copy() {
     TraceContext n = new TraceContext();
-    n.setStamp(stamp).setCost(cost).setTraceId(traceId).setRpcId(rpcId).setSpider(spider).setColor(color).setFail(fail).setIface(iface).setMethod(method).setClientName(clientName).setClientIp(clientIp).setServerName(serverName).setUrl(url).setParameter(parameter).setReason(reason).setExtra(extra).setUid(uid);
+    n.setStamp(stamp)
+     .setCost(cost)
+     .setTraceId(traceId)
+     .setRpcId(rpcId)
+     .setSpider(spider)
+     .setColor(color)
+     .setFail(fail)
+     .setIface(iface)
+     .setMethod(method)
+     .setClientName(clientName)
+     .setClientIp(clientIp)
+     .setServerName(serverName)
+     .setUrl(url)
+     .setParameter(parameter)
+     .setReason(reason)
+     .setExtra(extra)
+     .setUid(uid);
     return n;
   }
 
@@ -301,10 +317,5 @@ public class TraceContext {
       }
     }
     return sb.toString();
-  }
-
-  public void report() {
-    System.out.println(copy());
-    //RpcRecorder.record(copy());
   }
 }

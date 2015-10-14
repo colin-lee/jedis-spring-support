@@ -4,6 +4,7 @@ import com.github.autoconf.ConfigFactory;
 import com.github.autoconf.api.IChangeListener;
 import com.github.autoconf.api.IConfig;
 import com.github.autoconf.api.IConfigFactory;
+import com.github.trace.TraceRecorder;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -18,6 +19,8 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedisPool;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.URI;
 import java.util.*;
@@ -33,6 +36,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   private static final Set<String> names = ImmutableSet.of("Boolean", "Character", "Byte", "Short", "Long", "Integer", "Byte", "Float", "Double", "Void", "String");
   private final CharMatcher matcher = CharMatcher.anyOf(", ;|");
   protected Logger log = LoggerFactory.getLogger(getClass());
+  private TraceRecorder recorder;
   private IConfigFactory configFactory;
   private String configName;
   /**
@@ -50,6 +54,22 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
 
   public void setConfigName(String configName) {
     this.configName = configName;
+  }
+
+  public IConfigFactory getConfigFactory() {
+    return configFactory;
+  }
+
+  public void setConfigFactory(IConfigFactory configFactory) {
+    this.configFactory = configFactory;
+  }
+
+  public TraceRecorder getRecorder() {
+    return recorder;
+  }
+
+  public void setRecorder(TraceRecorder recorder) {
+    this.recorder = recorder;
   }
 
   public ShardedJedisPool getShardedPool() {
@@ -73,6 +93,11 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     if (configFactory == null) {
       configFactory = ConfigFactory.getInstance();
     }
+    if (recorder == null) {
+      recorder = new TraceRecorder();
+      recorder.setAsync(true);
+      recorder.afterPropertiesSet();
+    }
     configFactory.getConfig(configName, new IChangeListener() {
       @Override
       public void changed(IConfig config) {
@@ -87,7 +112,18 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
 
   @Override
   public void destroy() throws Exception {
-    shardedPool.close();
+    close(shardedPool);
+  }
+
+  private void close(Closeable c) {
+    if (c != null) {
+      try {
+        c.close();
+        c = null;
+      } catch (IOException e) {
+        log.error("cannot close {}", c, e);
+      }
+    }
   }
 
   private void loadConfig(IConfig config) {
@@ -95,7 +131,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     if (Strings.isNullOrEmpty(configServers))
       return;
     if (!config.getBool("startup", true)) {
-      shardedPool.close();
+      close(shardedPool);
       shardedPool = null;
       return;
     }
@@ -115,7 +151,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
       if (shardedPool != null) {
         ShardedJedisPool old = shardedPool;
         shardedPool = shardedJedisPool;
-        old.close();
+        close(old);
       } else {
         shardedPool = shardedJedisPool;
       }
@@ -124,7 +160,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
       if (pool != null) {
         JedisPool old = pool;
         pool = jedisPool;
-        old.close();
+        close(old);
       } else {
         pool = jedisPool;
       }
@@ -140,7 +176,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     String host = paths.get(0);
     int port = 6379, db = defaultDbIndex;
     if (paths.size() > 1) {
-      port = Integer.parseInt(paths.get(1), 6379);
+      port = Integer.parseInt(paths.get(1));
     }
     if (paths.size() > 2) {
       db = Integer.parseInt(paths.get(2));

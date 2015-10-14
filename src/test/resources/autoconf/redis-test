@@ -1,7 +1,9 @@
-redis.servers=10.134.77.59:6379
-redis.password=Sn5wenwen
+redis.servers=127.0.0.1:6379,
+redis.password=
 redis.dbIndex=2
+
 startup=true
+
 pool.maxActive=100
 pool.minIdle=5
 pool.maxWaitMillis=3000

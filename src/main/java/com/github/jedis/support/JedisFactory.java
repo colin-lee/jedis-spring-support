@@ -1,18 +1,20 @@
 package com.github.jedis.support;
 
 import com.github.trace.TraceContext;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.Reflection;
 import org.springframework.beans.factory.FactoryBean;
-import redis.clients.jedis.Client;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.*;
 import redis.clients.util.Pool;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.ConnectException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,7 +41,11 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
           if (pool != null) {
             return method.invoke(pool.getResource(), args);
           } else {
-            return method.invoke(getShardedPool().getResource(), args);
+            ShardedJedisPool shardedPool = getShardedPool();
+            if (shardedPool == null) {
+              return findDefault(method);
+            }
+            return method.invoke(shardedPool.getResource(), args);
           }
         }
 
@@ -55,10 +61,35 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
         if (pool != null) {
           return exchangeRedis(pool, method, args, configName, context);
         } else {
-          return exchangeRedis(getShardedPool(), method, args, configName, context);
+          ShardedJedisPool shardedPool = getShardedPool();
+          if (shardedPool == null) {
+            return findDefault(method);
+          }
+          return exchangeRedis(shardedPool, method, args, configName, context);
         }
       }
     });
+  }
+
+  private Object findDefault(Method method) {
+    Class<?> clz = method.getReturnType();
+    if (clz == String.class) {
+      return "";
+    } else if (clz == Long.class || clz == Double.class) {
+      return 0L;
+    } else if (clz == Boolean.class) {
+      return Boolean.FALSE;
+    } else if (clz.isArray()) {
+      return new byte[0];
+    } else if (clz.isAssignableFrom(Set.class)) {
+      return ImmutableSet.of();
+    } else if (clz.isAssignableFrom(List.class)) {
+      return ImmutableList.of();
+    } else if (clz.isAssignableFrom(Map.class)) {
+      return ImmutableMap.of();
+    } else {
+      return null;
+    }
   }
 
   private <T> Object exchangeRedis(Pool<T> pool, Method method, Object[] args, String configName, TraceContext context) throws ConnectException {
@@ -88,17 +119,15 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
           if (redis instanceof Jedis) {
             client = ((Jedis) redis).getClient();
           } else {
-            //TODO: 获取真实地址
-            /*
-            Jedis real = (Jedis) Sharded.ACTIVE.get();
-						if (real != null) {
-							client = real.getClient();
-						}
-						Sharded.ACTIVE.remove();
-						*/
+            Object key = args[0];
+            if (key instanceof String) {
+              client = ((ShardedJedis) redis).getShard((String) key).getClient();
+            } else if (key instanceof byte[]) {
+              client = ((ShardedJedis) redis).getShard((byte[]) key).getClient();
+            }
           }
           if (client != null) {
-            String url = "redis://" + client.getHost() + ':' + client.getPort();
+            String url = client.getHost() + ':' + client.getPort() + '/' + client.getDB();
             context.setUrl(url);
           }
         }
@@ -108,7 +137,8 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
       context.setStamp(start);
       context.setFail(fail);
       context.setCost(cost);
-      context.report();
+      getRecorder().post(context.copy());
+      context.reset();
     }
     return ret;
   }
