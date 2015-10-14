@@ -292,7 +292,12 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
       sbd.append("[]");
       return;
     }
-    if (isPrimitive(Array.get(arr, 0).getClass())) {
+    Class<?> clz = Array.get(arr, 0).getClass();
+    if (clz == Byte.class) {
+      sbd.append("Byte[").append(sz).append(']');
+      return;
+    }
+    if (isPrimitive(clz)) {
       sbd.append('[');
       int len = Math.min(sz, 10);
       for (int i = 0; i < len; i++) {

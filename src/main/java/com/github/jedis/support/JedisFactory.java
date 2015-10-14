@@ -49,7 +49,7 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
         TraceContext context = TraceContext.get();
         context.reset();
         context.inc();
-        context.setIface("redis");
+        context.setIface(configName);
         context.setMethod(method.getName());
         context.setParameter(getParameters(args));
         context.setServerName("redis:" + configName);

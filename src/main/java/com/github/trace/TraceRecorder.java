@@ -1,5 +1,6 @@
 package com.github.trace;
 
+import com.github.autoconf.helper.ConfigHelper;
 import com.github.trace.listener.LogDisk;
 import com.github.trace.listener.OssStat;
 import com.github.trace.listener.OssTrace;
@@ -17,6 +18,8 @@ import java.util.concurrent.Executors;
 public class TraceRecorder implements InitializingBean {
   private EventBus eventBus;
   private boolean async;
+  private String clientName;
+  private String clientIp;
 
   public EventBus getEventBus() {
     return eventBus;
@@ -35,11 +38,16 @@ public class TraceRecorder implements InitializingBean {
   }
 
   public void post(TraceContext c) {
+    c.setClientIp(clientIp);
+    c.setClientName(clientName);
     eventBus.post(c);
   }
 
   @Override
   public void afterPropertiesSet() throws Exception {
+    clientIp = ConfigHelper.getServerInnerIP();
+    clientName = ConfigHelper.getApplicationConfig().get("process.name", "unknown");
+
     if (eventBus == null) {
       if (async) {
         ExecutorService executor = Executors.newFixedThreadPool(3, new NamedThreadFactory("trace", true));

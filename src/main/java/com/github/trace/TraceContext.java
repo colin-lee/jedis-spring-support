@@ -32,10 +32,6 @@ public class TraceContext {
     TraceContext c = context.get();
     if (c == null) {
       c = new TraceContext();
-      //TODO: serverIp
-      c.setClientIp("unknown");
-      //TODO:NAME
-      c.setClientName("unknown");
       c.setParentRpcId("0");
       context.set(c);
     }
