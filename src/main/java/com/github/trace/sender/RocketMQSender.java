@@ -9,13 +9,10 @@ import com.alibaba.rocketmq.common.message.Message;
 import com.github.autoconf.ConfigFactory;
 import com.github.autoconf.api.IChangeListener;
 import com.github.autoconf.api.IConfig;
-import com.github.autoconf.api.IConfigFactory;
 import com.github.trace.NamedThreadFactory;
 import com.google.common.collect.Queues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -25,47 +22,39 @@ import java.util.concurrent.Executors;
  * 发送消息到RocketMQ
  * Created by lirui on 2015-10-14 18:52.
  */
-public class RocketMQSender implements Runnable, InitializingBean, DisposableBean {
+public class RocketMQSender implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(RocketMQSender.class);
   private final ConcurrentLinkedQueue<Message> queue = Queues.newConcurrentLinkedQueue();
   private ExecutorService executor;
   private DefaultMQProducer sender;
-  private IConfigFactory configFactory;
+  private boolean running;
 
-  public IConfigFactory getConfigFactory() {
-    return configFactory;
+  private static final RocketMQSender INSTANCE = new RocketMQSender();
+
+  public static RocketMQSender getINSTANCE() {
+    return INSTANCE;
   }
 
-  public void setConfigFactory(IConfigFactory configFactory) {
-    this.configFactory = configFactory;
-  }
-
-  @Override
-  public void afterPropertiesSet() throws Exception {
-    NamedThreadFactory factory = new NamedThreadFactory("rocketmq-sender", true);
+  private RocketMQSender() {
+    NamedThreadFactory factory = new NamedThreadFactory("trace-mq-sender", true);
     executor = Executors.newSingleThreadExecutor(factory);
     executor.submit(this);
-    if (configFactory == null) {
-      configFactory = ConfigFactory.getInstance();
-    }
-    configFactory.getConfig("", new IChangeListener() {
+    ConfigFactory.getInstance().getConfig("", new IChangeListener() {
       @Override
       public void changed(IConfig config) {
         reload(config);
       }
     });
-  }
 
-  @Override
-  public void destroy() throws Exception {
-    if (sender != null) {
-      sender.shutdown();
-      sender = null;
-    }
-    if (executor != null) {
-      executor.shutdown();
-      executor = null;
-    }
+    //增加退出回调功能
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+      @Override
+      public void run() {
+        running = false;
+        executor.shutdown();
+        sender.shutdown();
+      }
+    }));
   }
 
   private void reload(IConfig config) {
@@ -88,7 +77,8 @@ public class RocketMQSender implements Runnable, InitializingBean, DisposableBea
 
   @Override
   public void run() {
-    for (;;) {
+    running = true;
+    while (running) {
       Message msg = queue.poll();
       if (msg == null || sender == null) {
         continue;
