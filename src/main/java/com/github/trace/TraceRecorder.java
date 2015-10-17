@@ -6,6 +6,7 @@ import com.github.trace.listener.OssTrace;
 import com.github.trace.listener.RpcLog;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.concurrent.ExecutorService;
@@ -15,7 +16,8 @@ import java.util.concurrent.Executors;
  * trace记录
  * Created by lirui on 2015-10-14 10:10.
  */
-public class TraceRecorder implements InitializingBean {
+public class TraceRecorder implements InitializingBean, DisposableBean {
+  private ExecutorService executor;
   private EventBus eventBus;
   private boolean async;
   private String clientName;
@@ -50,7 +52,7 @@ public class TraceRecorder implements InitializingBean {
 
     if (eventBus == null) {
       if (async) {
-        ExecutorService executor = Executors.newFixedThreadPool(3, new NamedThreadFactory("trace", true));
+        executor = Executors.newFixedThreadPool(3, new NamedThreadFactory("trace", true));
         eventBus = new AsyncEventBus("asyncTraceEventBus", executor);
       } else {
         eventBus = new EventBus("traceEventBus");
@@ -63,5 +65,13 @@ public class TraceRecorder implements InitializingBean {
     eventBus.register(new OssStat());
     //trace跟踪
     eventBus.register(new OssTrace());
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    if (executor != null) {
+      executor.shutdown();
+      executor = null;
+    }
   }
 }

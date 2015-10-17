@@ -51,5 +51,4 @@ public abstract class StatCounter {
   public int getTotalCost() {
     return counters.get(4);
   }
-
 }

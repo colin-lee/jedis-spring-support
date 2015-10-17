@@ -115,6 +115,9 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   @Override
   public void destroy() throws Exception {
     close(shardedPool);
+    if (recorder != null) {
+      recorder.destroy();
+    }
   }
 
   private void close(Closeable c) {

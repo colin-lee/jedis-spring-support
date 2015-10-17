@@ -13,6 +13,8 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.util.List;
 import java.util.Map;
@@ -25,14 +27,23 @@ import java.util.concurrent.TimeUnit;
  * 每分钟统计,并上报到消息总线
  * Created by lirui on 2015-10-14 10:43.
  */
-public class OssStat implements Runnable {
+public class OssStat implements Runnable, InitializingBean, DisposableBean {
   private static final Logger LOG = LoggerFactory.getLogger(OssStat.class);
   private Snapshot current = new Snapshot();
+  private ScheduledExecutorService executor;
 
-  public OssStat() {
-    NamedThreadFactory factory = new NamedThreadFactory("oss-kafka-sender", true);
-    ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(factory);
-    ses.schedule(this, 10, TimeUnit.MILLISECONDS);
+  @Override
+  public void afterPropertiesSet() throws Exception {
+    NamedThreadFactory factory = new NamedThreadFactory("oss-stat", true);
+    executor = Executors.newSingleThreadScheduledExecutor(factory);
+    executor.schedule(this, 1, TimeUnit.MINUTES);
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    if (executor != null) {
+      executor.shutdown();
+    }
   }
 
   @Subscribe
