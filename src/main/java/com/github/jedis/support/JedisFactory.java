@@ -1,6 +1,7 @@
 package com.github.jedis.support;
 
 import com.github.trace.TraceContext;
+import com.github.trace.TraceRecorder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.Reflection;
 import org.springframework.beans.factory.FactoryBean;
@@ -111,7 +112,7 @@ public class JedisFactory<T> extends ConfigurableJedisPool implements FactoryBea
       context.setStamp(start);
       context.setFail(fail);
       context.setCost(cost);
-      getRecorder().post(context.copy());
+      TraceRecorder.getInstance().post(context.copy());
       context.reset();
     }
     return ret;

@@ -31,7 +31,7 @@ public class RocketMQSender implements Runnable {
 
   private static final RocketMQSender INSTANCE = new RocketMQSender();
 
-  public static RocketMQSender getINSTANCE() {
+  public static RocketMQSender getInstance() {
     return INSTANCE;
   }
 
@@ -101,5 +101,9 @@ public class RocketMQSender implements Runnable {
         }
       }
     }
+  }
+
+  public void asyncSend(Message m) {
+    queue.add(m);
   }
 }

@@ -1,6 +1,9 @@
 package com.github.trace.listener;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.rocketmq.common.message.Message;
 import com.github.trace.TraceContext;
+import com.github.trace.sender.RocketMQSender;
 import com.google.common.eventbus.Subscribe;
 
 /**
@@ -10,6 +13,7 @@ import com.google.common.eventbus.Subscribe;
 public class OssTrace {
   @Subscribe
   public void saveElasticSearch(TraceContext c) {
-
+    Message m = new Message("JinJingTrace", c.getTraceId(), JSON.toJSONBytes(c));
+    RocketMQSender.getInstance().asyncSend(m);
   }
 }

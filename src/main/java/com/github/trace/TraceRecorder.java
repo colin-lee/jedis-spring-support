@@ -6,8 +6,6 @@ import com.github.trace.listener.OssTrace;
 import com.github.trace.listener.RpcLog;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,48 +14,30 @@ import java.util.concurrent.Executors;
  * trace记录
  * Created by lirui on 2015-10-14 10:10.
  */
-public class TraceRecorder implements InitializingBean, DisposableBean {
+public class TraceRecorder {
+  private static final TraceRecorder INSTANCE = new TraceRecorder();
   private ExecutorService executor;
   private EventBus eventBus;
-  private boolean async;
   private String clientName;
   private String clientIp;
 
-  public EventBus getEventBus() {
-    return eventBus;
+  public static TraceRecorder getInstance() {
+    return INSTANCE;
   }
 
-  public void setEventBus(EventBus eventBus) {
-    this.eventBus = eventBus;
-  }
-
-  public boolean isAsync() {
-    return async;
-  }
-
-  public void setAsync(boolean async) {
-    this.async = async;
-  }
-
-  public void post(TraceContext c) {
-    c.setClientIp(clientIp);
-    c.setClientName(clientName);
-    eventBus.post(c);
-  }
-
-  @Override
-  public void afterPropertiesSet() throws Exception {
+  private TraceRecorder() {
     clientIp = ConfigHelper.getServerInnerIP();
     clientName = ConfigHelper.getApplicationConfig().get("process.name", "unknown");
 
-    if (eventBus == null) {
-      if (async) {
-        executor = Executors.newFixedThreadPool(3, new NamedThreadFactory("trace", true));
-        eventBus = new AsyncEventBus("asyncTraceEventBus", executor);
-      } else {
-        eventBus = new EventBus("traceEventBus");
+    executor = Executors.newFixedThreadPool(3, new NamedThreadFactory("trace", true));
+    eventBus = new AsyncEventBus("asyncTraceEventBus", executor);
+    //增加退出回调函数
+    Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+      @Override
+      public void run() {
+        executor.shutdown();
       }
-    }
+    }));
 
     //记录到日志
     eventBus.register(new RpcLog());
@@ -67,11 +47,9 @@ public class TraceRecorder implements InitializingBean, DisposableBean {
     eventBus.register(new OssTrace());
   }
 
-  @Override
-  public void destroy() throws Exception {
-    if (executor != null) {
-      executor.shutdown();
-      executor = null;
-    }
+  public void post(TraceContext c) {
+    c.setClientIp(clientIp);
+    c.setClientName(clientName);
+    eventBus.post(c);
   }
 }

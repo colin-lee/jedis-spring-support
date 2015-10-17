@@ -4,7 +4,6 @@ import com.github.autoconf.ConfigFactory;
 import com.github.autoconf.api.IChangeListener;
 import com.github.autoconf.api.IConfig;
 import com.github.autoconf.api.IConfigFactory;
-import com.github.trace.TraceRecorder;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -38,7 +37,6 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   private static final Set<String> names = ImmutableSet.of("Boolean", "Character", "Byte", "Short", "Long", "Integer", "Byte", "Float", "Double", "Void", "String");
   private final CharMatcher matcher = CharMatcher.anyOf(", ;|");
   protected Logger log = LoggerFactory.getLogger(getClass());
-  private TraceRecorder recorder;
   private IConfigFactory configFactory;
   private String configName;
   /**
@@ -66,14 +64,6 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     this.configFactory = configFactory;
   }
 
-  public TraceRecorder getRecorder() {
-    return recorder;
-  }
-
-  public void setRecorder(TraceRecorder recorder) {
-    this.recorder = recorder;
-  }
-
   public ShardedJedisPool getShardedPool() {
     return shardedPool;
   }
@@ -95,11 +85,6 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
     if (configFactory == null) {
       configFactory = ConfigFactory.getInstance();
     }
-    if (recorder == null) {
-      recorder = new TraceRecorder();
-      recorder.setAsync(true);
-      recorder.afterPropertiesSet();
-    }
     configFactory.getConfig(configName, new IChangeListener() {
       @Override
       public void changed(IConfig config) {
@@ -115,9 +100,6 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   @Override
   public void destroy() throws Exception {
     close(shardedPool);
-    if (recorder != null) {
-      recorder.destroy();
-    }
   }
 
   private void close(Closeable c) {
