@@ -1,4 +1,4 @@
-redis-support
+jedis-spring-support
 ===
 目的
 ===
@@ -28,32 +28,3 @@ redis-support
 
     若果是二进制协议，可以用
     private BinaryJedisCmd jedis
-
-
-修改内容
-===
-1. 从官网 https://github.com/xetorthio/jedis/ 下载源码
-1. 修改Sharded类，增加ThreadLocal变量记录每次调用实际使用的Jedis对象
-
-前后对比
-====
-     public class Sharded<R, S extends ShardInfo<R>> {
-    +  public static final ThreadLocal<Object> ACTIVE = new ThreadLocal<Object>();
-
-       public static final int DEFAULT_WEIGHT = 1;
-
-       public R getShard(byte[] key) {
-    -    return resources.get(getShardInfo(key));
-    +    R r = resources.get(getShardInfo(key));
-    +    ACTIVE.set(r);
-    +    return r;
-       }
-
-       public R getShard(String key) {
-    -    return resources.get(getShardInfo(key));
-    +    R r = resources.get(getShardInfo(key));
-    +    ACTIVE.set(r);
-    +    return r;
-       }
-
-       public S getShardInfo(byte[] key) {

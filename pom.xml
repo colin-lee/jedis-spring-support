@@ -32,11 +32,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.alibaba.rocketmq</groupId>
-            <artifactId>rocketmq-client</artifactId>
-            <version>3.2.6</version>
-        </dependency>
-        <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>2.7.3</version>
@@ -44,6 +39,11 @@
         <dependency>
             <groupId>com.github.colin-lee</groupId>
             <artifactId>config-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.colin-lee</groupId>
+            <artifactId>rpc-trace</artifactId>
             <version>1.0.0</version>
         </dependency>
         <!-- Spring core  -->
