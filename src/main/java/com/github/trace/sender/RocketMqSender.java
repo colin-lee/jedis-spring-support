@@ -22,20 +22,20 @@ import java.util.concurrent.Executors;
  * 发送消息到RocketMQ
  * Created by lirui on 2015-10-14 18:52.
  */
-public class RocketMQSender implements Runnable {
-  private static final Logger LOG = LoggerFactory.getLogger(RocketMQSender.class);
+public class RocketMqSender implements Runnable {
+  private static final Logger LOG = LoggerFactory.getLogger(RocketMqSender.class);
   private final ConcurrentLinkedQueue<Message> queue = Queues.newConcurrentLinkedQueue();
   private ExecutorService executor;
   private DefaultMQProducer sender;
   private boolean running;
 
-  private static final RocketMQSender INSTANCE = new RocketMQSender();
+  private static final RocketMqSender INSTANCE = new RocketMqSender();
 
-  public static RocketMQSender getInstance() {
+  public static RocketMqSender getInstance() {
     return INSTANCE;
   }
 
-  private RocketMQSender() {
+  private RocketMqSender() {
     NamedThreadFactory factory = new NamedThreadFactory("trace-mq-sender", true);
     executor = Executors.newSingleThreadExecutor(factory);
     executor.submit(this);

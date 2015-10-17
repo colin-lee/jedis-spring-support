@@ -7,7 +7,7 @@ import com.github.trace.NamedThreadFactory;
 import com.github.trace.TraceContext;
 import com.github.trace.bean.RpcStatBean;
 import com.github.trace.bean.ServiceStatBean;
-import com.github.trace.sender.RocketMQSender;
+import com.github.trace.sender.RocketMqSender;
 import com.github.trace.stat.RpcStatCounter;
 import com.github.trace.stat.ServiceStatCounter;
 import com.github.trace.stat.Snapshot;
@@ -87,7 +87,7 @@ public class OssStat implements Runnable {
       String module = key.substring(0, pos), method = key.substring(pos + 1);
       ServiceStatBean e = new ServiceStatBean(stamp, module, method, caller, cnt.getTotalCount(), cnt.getTotalCost(), cnt.getFailCount(), cnt.getSlowCount());
       Message m = new Message("JinJingOss", "service", JSON.toJSONBytes(e));
-      RocketMQSender.getInstance().asyncSend(m);
+      RocketMqSender.getInstance().asyncSend(m);
       String avg = String.format("%.2f", cnt.getTotalCost() * 1.0 / cnt.getTotalCount());
       String msg = Joiner.on('\t').join(module, method, avg, cnt.getTotalCount(), cnt.getFailCount());
       if (cnt.getFailCount() > 0) {
@@ -116,7 +116,7 @@ public class OssStat implements Runnable {
       String module = key.substring(0, pos), url = key.substring(pos + 1);
       RpcStatBean e = new RpcStatBean(stamp, module, caller, url, cnt.getTotalCount(), cnt.getTotalCost(), cnt.getFailCount(), cnt.getSlowCount());
       Message m = new Message("JinJingOss", "rpc", JSON.toJSONBytes(e));
-      RocketMQSender.getInstance().asyncSend(m);
+      RocketMqSender.getInstance().asyncSend(m);
       String avg = String.format("%.2f", cnt.getTotalCost() * 1.0 / cnt.getTotalCount());
       String msg = Joiner.on('\t').join(module, url, avg, cnt.getTotalCount(), cnt.getFailCount());
       if (cnt.getFailCount() > 0) {
