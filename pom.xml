@@ -6,6 +6,7 @@
 
     <groupId>com.github.colin-lee</groupId>
     <artifactId>jedis-spring-support</artifactId>
+    <name>jedis-spring-support</name>
     <version>1.0.0</version>
     <url>https://github.com/colin-lee/jedis-spring-support</url>
     <description>using jedis lib, add spring support</description>
