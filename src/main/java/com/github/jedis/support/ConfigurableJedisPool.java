@@ -265,7 +265,7 @@ public abstract class ConfigurableJedisPool implements InitializingBean, Disposa
   private String evalPrimitive(Object obj) {
     String s = String.valueOf(obj);
     if (s.length() > 32) {
-      return s.substring(0, 32);
+      return s.substring(0, 32) + "...";
     }
     return s;
   }
